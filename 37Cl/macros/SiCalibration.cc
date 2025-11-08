@@ -279,7 +279,6 @@ void SiCalibration() {
     dE_errors.push_back(dE_err);
   }
 
-  // Second pass: create plots with dE information (only for runs 24-36)
   for (int run = 24; run <= 36; run++) {
     int idx = run - 21;
 
@@ -359,7 +358,7 @@ void SiCalibration() {
     pressure_vec.push_back(gas_pressure[run]);
     dE_for_plot.push_back(dE_values[idx]);
     dE_err_for_plot.push_back(dE_errors[idx]);
-    pressure_err_vec.push_back(0); // Assuming negligible pressure uncertainty
+    pressure_err_vec.push_back(0);
   }
 
   TGraphErrors *dE_vs_pressure =
@@ -459,7 +458,6 @@ void SiCalibration() {
   Double_t sigma_ch;
   Double_t sigma_err_ch;
 
-  // Create branches
   results->Branch("RunNumber", &run_number, "RunNumber/I");
   results->Branch("GasPressure", &gas_pressure_torr, "GasPressure/D");
   results->Branch("DeltaE", &delta_E_MeV, "DeltaE/D");
@@ -474,6 +472,7 @@ void SiCalibration() {
 
   for (Int_t run = 25; run <= 36; run++) {
     Int_t idx = run - 21;
+    run_number = run;
     run_number = run;
     gas_pressure_torr = gas_pressure[run];
     delta_E_MeV = dE_values[idx];
