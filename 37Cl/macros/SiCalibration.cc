@@ -124,6 +124,9 @@ void SiCalibration() {
   canvas->SetTicks(1, 1);
   gPad->SetTicks(1, 1);
 
+  if (gSystem->AccessPathName("plots")) {
+    gSystem->mkdir("plots", kTRUE);
+  }
   // First pass: get mu values for all runs
   Double_t mu_21 = 0, mu_22 = 0;
   Double_t mu_21_err = 0, mu_22_err = 0;
@@ -192,26 +195,29 @@ void SiCalibration() {
     delete file;
   }
 
-  Double_t cal_x[2] = {mu_21, mu_22};
-  Double_t cal_y[2] = {91.87, 71.35};
-  Double_t cal_ex[2] = {mu_21_err, mu_22_err};
-  Double_t cal_ey[2] = {0.01, 0.01};
+  Double_t cal_x[3] = {0, mu_21, mu_22};
+  Double_t cal_y[3] = {0, 91.87, 71.35};
+  Double_t cal_ex[3] = {0, mu_21_err, mu_22_err};
+  Double_t cal_ey[3] = {0, 0.01, 0.01};
 
-  TGraphErrors *cal_graph = new TGraphErrors(2, cal_x, cal_y, cal_ex, cal_ey);
+  TGraphErrors *cal_graph = new TGraphErrors(3, cal_x, cal_y, cal_ex, cal_ey);
   cal_graph->SetTitle(";ADC Channel;TOF Energy (MeV)");
   cal_graph->SetMarkerStyle(20);
   cal_graph->SetMarkerSize(1.5);
   cal_graph->SetMarkerColor(kBlue);
 
-  TF1 *cal_fit = new TF1("cal_fit", "[0] + [1]*x", 0, 16384);
+  TF1 *cal_fit = new TF1("cal_fit", "[0] + [1]*x + [2]*x**2", 0, 16384);
   cal_fit->SetParameter(0, 0);
+  cal_fit->SetParLimits(0, -10, 10);
   cal_fit->SetParameter(1, 0.006);
   cal_graph->Fit("cal_fit", "Q");
 
   Double_t p0 = cal_fit->GetParameter(0);
   Double_t p1 = cal_fit->GetParameter(1);
+  Double_t p2 = cal_fit->GetParameter(2);
   Double_t p0_err = cal_fit->GetParError(0);
   Double_t p1_err = cal_fit->GetParError(1);
+  Double_t p2_err = cal_fit->GetParError(2);
 
   // Plot calibration curve
   TCanvas *cal_canvas =
@@ -231,23 +237,27 @@ void SiCalibration() {
   cal_legend->SetTextSize(0.035);
   cal_legend->SetBorderSize(1);
   cal_legend->AddEntry(cal_graph, "Calibration points", "p");
-  cal_legend->AddEntry(cal_fit, Form("Fit: E = p_{0} + p_{1}x"), "l");
-  cal_legend->AddEntry((TObject *)0, Form("p_{0} = %.2f #pm %.1f", p0, p0_err),
+  cal_legend->AddEntry(cal_fit, Form("Fit: E = p_{0} + p_{1}x + p_{2}x^2"),
+                       "l");
+  cal_legend->AddEntry((TObject *)0, Form("p_{0} = %.2f #pm %.3f", p0, p0_err),
                        "");
-  cal_legend->AddEntry((TObject *)0, Form("p_{1} = %.2f #pm %.1f", p1, p1_err),
+  cal_legend->AddEntry((TObject *)0, Form("p_{1} = %.5f #pm %.6f", p1, p1_err),
+                       "");
+  cal_legend->AddEntry((TObject *)0, Form("p_{2} = %.7f #pm %.8f", p2, p2_err),
                        "");
   cal_legend->Draw();
 
   cal_canvas->Update();
-  cal_canvas->SaveAs("Energy_Calibration.png");
+  cal_canvas->SaveAs("plots/Energy_Calibration.png");
   for (size_t i = 0; i < mu_values.size(); i++) {
     Double_t adc = mu_values[i];
-    Double_t energy_MeV = p0 + p1 * adc;
+    Double_t energy_MeV = p0 + p1 * adc + p2 * adc * adc;
 
     Double_t energy_err_MeV =
         TMath::Sqrt(TMath::Power(p0_err, 2) + TMath::Power(adc * p1_err, 2) +
                     TMath::Power(p1 * mu_errors[i], 2));
     energy_values.push_back(energy_MeV);
+    std::cout << "Energy (MeV): " << energy_MeV << std::endl;
     energy_errors.push_back(energy_err_MeV);
   }
 
@@ -342,9 +352,9 @@ void SiCalibration() {
 
     canvas->Update();
     if (logy) {
-      canvas->SaveAs(Form("Run_%d_log.png", run));
+      canvas->SaveAs(Form("plots/Run_%d_log.png", run));
     } else {
-      canvas->SaveAs(Form("Run_%d.png", run));
+      canvas->SaveAs(Form("plots/Run_%d.png", run));
     }
     delete file;
   }
@@ -386,7 +396,7 @@ void SiCalibration() {
   dE_vs_pressure->GetYaxis()->SetTitleOffset(1.3);
 
   dE_canvas->Update();
-  dE_canvas->SaveAs("dE_vs_Pressure.png");
+  dE_canvas->SaveAs("plots/dE_vs_Pressure.png");
 
   std::vector<Double_t> run_numbers;
   std::vector<Double_t> resolution_percent;
@@ -440,7 +450,7 @@ void SiCalibration() {
   resolution_vs_run->GetXaxis()->SetNdivisions(516);
 
   res_canvas->Update();
-  res_canvas->SaveAs("Resolution_vs_Run.png");
+  res_canvas->SaveAs("plots/Resolution_vs_Run.png");
 
   TFile *outFile = new TFile("SiCalibration_Results.root", "RECREATE");
 
@@ -473,11 +483,11 @@ void SiCalibration() {
   for (Int_t run = 25; run <= 36; run++) {
     Int_t idx = run - 21;
     run_number = run;
-    run_number = run;
+    std::cout << "Run number: " << run << std::endl;
     gas_pressure_torr = gas_pressure[run];
     delta_E_MeV = dE_values[idx];
     delta_E_err_MeV = dE_errors[idx];
-
+    std::cout << "Delta E (MeV): " << delta_E_MeV << std::endl;
     Double_t fwhm = 2.355 * sigma_values[idx];
     Double_t fwhm_err = 2.355 * sigma_errors[idx];
     fwhm_percent = (fwhm / mu_values[idx]) * 100.0;

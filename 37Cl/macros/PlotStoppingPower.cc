@@ -15,7 +15,6 @@
 #include <vector>
 
 void PlotStoppingPower() {
-  gSystem->cd("..");
   gROOT->SetBatch(kTRUE);
   gStyle->SetOptStat(0);
   gStyle->SetOptFit(0);
@@ -206,7 +205,11 @@ void PlotStoppingPower() {
   legend->Draw();
 
   canvas->Update();
-  canvas->SaveAs("DeltaE_vs_Pressure_Comparison.png");
+
+  if (gSystem->AccessPathName("plots")) {
+    gSystem->mkdir("plots", kTRUE);
+  }
+  canvas->SaveAs("plots/DeltaE_vs_Pressure_Comparison.png");
 
   std::cout << "Plot saved!" << std::endl;
 

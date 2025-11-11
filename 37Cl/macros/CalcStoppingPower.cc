@@ -99,7 +99,6 @@ Double_t GetStoppingPowerFromLISE(const TString &filename, Int_t modelIndex,
 
 void CalcStoppingPower() {
 
-  gSystem->cd("..");
   TFile *inFile = new TFile("SiCalibration_Results.root", "UPDATE");
 
   if (!inFile || inFile->IsZombie()) {
@@ -145,7 +144,7 @@ void CalcStoppingPower() {
 
   const Double_t titanium_entrance = 0.9; // mg / cm2
   const Double_t titanium_exit = 1.3;     // mg / cm2
-  const TString ti_lise_filename = "37Cl_in_Ti_NOT_MICRON.lise";
+  const TString ti_lise_filename = "lise/37Cl_in_Ti_NOT_MICRON.lise";
 
   Double_t deltaE_entrance, deltaE_gas, deltaE_exit;
   Double_t beam_energy_per_u_gas, beam_energy_per_u_exit;
@@ -157,7 +156,7 @@ void CalcStoppingPower() {
               << " with gas pressure: " << gas_pressure_torr << std::endl;
 
     TString lise_filename =
-        Form("37Cl_in_He4_%03.0fTorr_293K.lise", gas_pressure_torr);
+        Form("lise/37Cl_in_He4_%03.0fTorr_293K.lise", gas_pressure_torr);
 
     for (Int_t model = 0; model < 7; ++model) {
       Double_t entrance_dedx_MeV_per_mg_cm2 =
