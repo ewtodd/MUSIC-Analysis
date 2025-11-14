@@ -212,6 +212,8 @@ void SiCalibration() {
   cal_fit->SetParameter(1, 0.006);
   cal_graph->Fit("cal_fit", "Q");
 
+  cal_graph->GetXaxis()->SetLimits(-1, 16384);
+
   Double_t p0 = cal_fit->GetParameter(0);
   Double_t p1 = cal_fit->GetParameter(1);
   Double_t p2 = cal_fit->GetParameter(2);
@@ -232,7 +234,7 @@ void SiCalibration() {
   cal_graph->GetXaxis()->SetLabelSize(0.045);
   cal_graph->GetYaxis()->SetLabelSize(0.045);
 
-  TLegend *cal_legend = new TLegend(0.15, 0.65, 0.60, 0.88);
+  TLegend *cal_legend = new TLegend(0.15, 0.65, 0.60, 0.9);
   cal_legend->SetTextFont(42);
   cal_legend->SetTextSize(0.035);
   cal_legend->SetBorderSize(1);
@@ -289,7 +291,7 @@ void SiCalibration() {
     dE_errors.push_back(dE_err);
   }
 
-  for (int run = 24; run <= 36; run++) {
+  for (int run = 21; run <= 36; run++) {
     int idx = run - 21;
 
     TFile *file = new TFile(filepaths[idx].c_str(), "READ");
@@ -339,8 +341,14 @@ void SiCalibration() {
     legend->SetFillStyle(1001);
     legend->AddEntry(
         (TObject *)0,
-        Form("#DeltaE = %.2f #pm %.2f MeV", dE_values[idx], dE_errors[idx]),
+        Form("E = %.2f #pm %.2f MeV", energy_values[idx], energy_errors[idx]),
         "");
+    if (run >= 25) {
+      legend->AddEntry(
+          (TObject *)0,
+          Form("#DeltaE = %.2f #pm %.2f MeV", dE_values[idx], dE_errors[idx]),
+          "");
+    }
     legend->AddEntry(
         (TObject *)0,
         Form("#mu = %.1f #pm %.1f ADC", mu_values[idx], mu_errors[idx]), "");
